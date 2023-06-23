@@ -2,4 +2,4 @@ fastapi
 uvicorn[standard]
 requests
 json
-Middleware
+CORSMiddleware
