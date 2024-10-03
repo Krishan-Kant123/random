@@ -174,58 +174,35 @@ query ($id: Int) { # Define which variables will be used in the query (id)
           bannerImage
           isAdult
           meanScore
+          averageScore
           popularity
           type
         }
       }
     }
-    characters {
+     characterPreview: characters(perPage: 6, sort: [ROLE, RELEVANCE, ID]) {
       edges {
         id
         role
         name
-        voiceActors {
-          languageV2
+        voiceActors(language: JAPANESE, sort: [RELEVANCE, ID]) {
           id
           name {
-            first
-            full
-            last
-            native
             userPreferred
           }
+          language: languageV2
           image {
             large
-            medium
           }
         }
         node {
-          image {
-            large
-            medium
-          }
+          id
           name {
-            first
-            full
-            last
-            native
             userPreferred
           }
-          gender
-        }
-      }
-      nodes {
-        id
-        image {
-          large
-          medium
-        }
-        name {
-          full
-          first
-          last
-          native
-          userPreferred
+          image {
+            large
+          }
         }
       }
     }
@@ -250,6 +227,7 @@ query ($id: Int) { # Define which variables will be used in the query (id)
         }
         popularity
         meanScore
+        averageScore
         type
       }
     }
