@@ -216,6 +216,7 @@ query ($id: Int) { # Define which variables will be used in the query (id)
           romaji
           userPreferred
         }
+        genres
         status
         episodes
         bannerImage
