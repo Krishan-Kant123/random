@@ -1,4 +1,4 @@
-
+ 
 from fastapi import FastAPI
 import requests
 import json
@@ -34,6 +34,17 @@ headers = {
 }
 
 url = 'https://graphql.anilist.co'
+
+def ep(title:str):
+  print(title)
+  u=f'https://dev-amvstrm-api.nyt92.eu.org/api/v1/episode/{title}'
+  # u="https://dev-amvstrm-api.nyt92.eu.org/api/v1/episode/shingeki-no-kyojin"
+  r=requests.get(u)
+ 
+  k=r.json()
+
+  return k
+
 
 def f(st:str,pg:int,ct:int=20):
   query = '''
@@ -99,7 +110,7 @@ def f(st:str,pg:int,ct:int=20):
   return response.json()
 
 
-def det(id:int):
+def det(id:int,dub:str):
   query = '''
 query ($id: Int) { # Define which variables will be used in the query (id)
   Media (id: $id) { # Insert our variables into the query arguments (id) (type: ANIME is hard-coded in the query)
@@ -242,7 +253,34 @@ query ($id: Int) { # Define which variables will be used in the query (id)
   }
 
   response = requests.post(url, json={'query': query, 'variables': variables})
-  return response.json()
+  e= response.json()
+  u=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/info/{id}"
+  res=requests.get(u,headers=headers)
+  res=res.json()
+  provider=res["id_provider"]
+  e["id_provider"]=provider
+  name=provider["idGogo"]
+  if(dub!="false"):
+    if(provider["idGogoDub"]==""):
+      e['data']['Media']["totalepisodes"]=[]
+      return e
+    name=provider["idGogoDub"]
+  
+  s=(ep(name))
+  print(type(e))
+  e['data']['Media']["totalepisodes"]=s["episodes"]
+  print(e['data']['Media'])
+  # first_data = json.loads(e)
+  
+  # e['data']['Media']['Episodes']=s["episodes"]
+  # second_data = json.loads(ep(first_data['data']['Media']['title']['romaji']))
+
+  # first_data['data']['Media']['Episodes'] = s["episodes"]
+  # print(first_data)
+
+
+  return e
+
 
 def ser(st:str,pg:int):
   query = '''
@@ -511,7 +549,7 @@ async def main(pgno:int =1):
 @app.get('/detail/{id}/{dub}')
 async def main(id:int,dub: str):
 
- return det(id)
+ return det(id,dub)
 
 
 
@@ -519,7 +557,8 @@ async def main(id:int,dub: str):
 async def main(str: str):
 
 #   https://api.consumet.org/meta/anilist/watch/{episodeId}
-  url=f"https://api-consumet-org-two-opal.vercel.app/meta/anilist/watch/{str}"
+  # url=f"https://api-consumet-org-two-opal.vercel.app/meta/anilist/watch/{str}"
+  url=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/stream/{str}"
  
   # url=f"https://march-api1.vercel.app/meta/anilist/watch/{str}"
   r=requests.get(url,headers=headers)
