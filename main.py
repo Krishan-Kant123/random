@@ -260,6 +260,10 @@ query ($id: Int) { # Define which variables will be used in the query (id)
   provider=res["id_provider"]
   e["id_provider"]=provider
   name=provider["idGogo"]
+ if(dub=="false"):
+    if(provider["idGogo"]==""):
+      e['data']['Media']["totalepisodes"]=[]
+      return e
   if(dub!="false"):
     if(provider["idGogoDub"]==""):
       e['data']['Media']["totalepisodes"]=[]
