@@ -1,5 +1,7 @@
+
  
-from fastapi import FastAPI
+from fastapi import FastAPI, Query, HTTPException
+from fastapi.responses import Response
 import requests
 import json
 from starlette.middleware import Middleware
@@ -260,7 +262,7 @@ query ($id: Int) { # Define which variables will be used in the query (id)
   provider=res["id_provider"]
   e["id_provider"]=provider
   name=provider["idGogo"]
- if(dub=="false"):
+  if(dub=="false"):
     if(provider["idGogo"]==""):
       e['data']['Media']["totalepisodes"]=[]
       return e
@@ -557,14 +559,15 @@ async def main(id:int,dub: str):
 
 
 
-@app.get('/watch/{str}')
-async def main(str: str):
+@app.get('/watch/{id}/{str}')
+async def main(id:str,str: int):
 
 #   https://api.consumet.org/meta/anilist/watch/{episodeId}
   # url=f"https://api-consumet-org-two-opal.vercel.app/meta/anilist/watch/{str}"
-  url=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/stream/{str}"
+  # url=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/stream/{str}"
  
   # url=f"https://march-api1.vercel.app/meta/anilist/watch/{str}"
+  url=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/stream/{id}/{str}"
   r=requests.get(url,headers=headers)
   k=r.json()
   return k
@@ -584,6 +587,18 @@ async def main(query:str,pgno:int):
   return ser(query,pgno)
 
 # https://api-consumet-org-two-opal.vercel.app/meta/anilist/advanced-search?query=demon+slayer&page=1&perPage=25&type=ANIME
+
+@app.get("/proxy")
+async def main(p: str = Query(..., description="M3U8 master playlist URL")):
+  
+  proxy_url = "https://m3u8-proxy-dnuse.amvstr.me/"
+
+  print(f"{proxy_url}{p}")
+
+
+  response = requests.get(f"{p}",headers=headers)
+  return response.text
+
 @app.get('*')
 async def main():
     return "page does not exist"
