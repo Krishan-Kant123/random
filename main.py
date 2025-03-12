@@ -6,6 +6,8 @@ import requests
 import json
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
+import difflib
+
 
 middleware = [
     Middleware(
@@ -45,7 +47,21 @@ def ep(title:str,dub:str):
   r=requests.get(u)
  
   k=r.json()
-  id = k.get("results", [{}])[0].get("id")
+  possible=k.get("results",[])
+  # print(possible)
+  candi=[]
+  for each in possible:
+    candi.append(each.get("title"))
+  
+  # return k
+
+  closest_matches = difflib.get_close_matches(title, candi, n=1, cutoff=0.5)
+  closest_match = closest_matches[0]
+  index = candi.index(closest_match) 
+
+
+
+  id = k.get("results", [{}])[index].get("id")
   print(id)
   for_episodes=f'https://stream-pied-five.vercel.app/anime/zoro/info?id={id}'
   epi=requests.get(for_episodes)
