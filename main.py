@@ -37,15 +37,39 @@ headers = {
 
 url = 'https://graphql.anilist.co'
 
-def ep(title:str):
+def ep(title:str,dub:str):
   print(title)
-  u=f'https://dev-amvstrm-api.nyt92.eu.org/api/v1/episode/{title}'
-  # u="https://dev-amvstrm-api.nyt92.eu.org/api/v1/episode/shingeki-no-kyojin"
+  # u=f'https://dev-amvstrm-api.nyt92.eu.org/api/v1/episode/{title}'
+  
+  u=f'https://stream-pied-five.vercel.app/anime/zoro/{title}'
   r=requests.get(u)
  
   k=r.json()
+  id = k.get("results", [{}])[0].get("id")
+  print(id)
+  for_episodes=f'https://stream-pied-five.vercel.app/anime/zoro/info?id={id}'
+  epi=requests.get(for_episodes)
+#   print(epi)
+  epi=epi.json()
+#   print(epi)
+  epi= epi.get("episodes", [])
+#   print(epi)
+  list=[]
+  for every in epi:
+    print(every['isSubbed'])
+    if(dub=='false'):
+      if(every['isSubbed']==True):
+        list.append(every)
+    else:
+      if(every['isDubbed']==True):
+        list.append(every)
+#   print(list)
+  return list
 
-  return k
+
+
+
+  
 
 
 def f(st:str,pg:int,ct:int=20):
@@ -256,35 +280,28 @@ query ($id: Int) { # Define which variables will be used in the query (id)
 
   response = requests.post(url, json={'query': query, 'variables': variables})
   e= response.json()
-  u=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/info/{id}"
-  res=requests.get(u,headers=headers)
-  res=res.json()
-  provider=res["id_provider"]
-  e["id_provider"]=provider
-  name=provider["idGogo"]
-  if(dub=="false"):
-    if(provider["idGogo"]==""):
-      e['data']['Media']["totalepisodes"]=[]
-      return e
-  if(dub!="false"):
-    if(provider["idGogoDub"]==""):
-      e['data']['Media']["totalepisodes"]=[]
-      return e
-    name=provider["idGogoDub"]
+  # u=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/info/{id}"
+  # res=requests.get(u,headers=headers)
+  # res=res.json()
+  # provider=res["id_provider"]
+  # e["id_provider"]=provider
+  # name=provider["idGogo"]
+  # if(dub=="false"):
+  #   if(provider["idGogo"]==""):
+  #     e['data']['Media']["totalepisodes"]=[]
+  #     return e
+  # if(dub!="false"):
+  #   if(provider["idGogoDub"]==""):
+  #     e['data']['Media']["totalepisodes"]=[]
+  #     return e
+  #   name=provider["idGogoDub"]
   
-  s=(ep(name))
-  print(type(e))
-  e['data']['Media']["totalepisodes"]=s["episodes"]
-  print(e['data']['Media'])
-  # first_data = json.loads(e)
+  nam= e['data']['Media']['title']['english']
+  s=(ep(nam,dub))
+#   print(s)
+  e['data']['Media']["totalepisodes"]=s
+#   print(e['data']['Media'])
   
-  # e['data']['Media']['Episodes']=s["episodes"]
-  # second_data = json.loads(ep(first_data['data']['Media']['title']['romaji']))
-
-  # first_data['data']['Media']['Episodes'] = s["episodes"]
-  # print(first_data)
-
-
   return e
 
 
@@ -567,9 +584,15 @@ async def main(id:str,str: int):
   # url=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/stream/{str}"
  
   # url=f"https://march-api1.vercel.app/meta/anilist/watch/{str}"
-  url=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/stream/{id}/{str}"
+#   url=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/stream/{id}/{str}"
+  url=f'https://stream-pied-five.vercel.app/anime/zoro/watch/{id}'
   r=requests.get(url,headers=headers)
   k=r.json()
+  modified_subtitles = [{"src": item["url"], "label": item["lang"]} for item in k['subtitles']]
+  print(k['subtitles'])
+  k['subtitles']=modified_subtitles
+  
+
   return k
 
 
