@@ -577,7 +577,7 @@ async def main(id:int,dub: str):
 
 
 @app.get('/watch/{id}/{str}')
-async def main(id:str,str: int):
+async def main(id:str,str: str):
 
 #   https://api.consumet.org/meta/anilist/watch/{episodeId}
   # url=f"https://api-consumet-org-two-opal.vercel.app/meta/anilist/watch/{str}"
@@ -585,7 +585,7 @@ async def main(id:str,str: int):
  
   # url=f"https://march-api1.vercel.app/meta/anilist/watch/{str}"
 #   url=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/stream/{id}/{str}"
-  url=f'https://stream-pied-five.vercel.app/anime/zoro/watch/{id}'
+  url=f'https://stream-pied-five.vercel.app/anime/zoro/watch/{id}?dub={str}'
   r=requests.get(url,headers=headers)
   k=r.json()
   modified_subtitles = [{"src": item["url"], "label": item["lang"]} for item in k['subtitles']]
