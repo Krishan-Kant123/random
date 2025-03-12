@@ -7,6 +7,7 @@ import json
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 import difflib
+from difflib import SequenceMatcher
 
 
 middleware = [
@@ -39,6 +40,21 @@ headers = {
 
 url = 'https://graphql.anilist.co'
 
+def similarity(a, b):
+    return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+
+def best_match(query, choices):
+    query_lower = query.lower()
+    
+    # Prioritize exact word matches first
+    exact_matches = [i for i, title in enumerate(choices) if query_lower in title.lower()]
+    
+    if exact_matches:
+        return exact_matches[0]  # Return first exact match
+    
+    # If no exact matches, use similarity score
+    return max(range(len(choices)), key=lambda i: similarity(query, choices[i]))
+
 def ep(title:str,dub:str):
   print(title)
   # u=f'https://dev-amvstrm-api.nyt92.eu.org/api/v1/episode/{title}'
@@ -52,16 +68,21 @@ def ep(title:str,dub:str):
   candi=[]
   for each in possible:
     candi.append(each.get("title"))
-  
+  # print(candi)
+  # return k
+  closest_index = best_match(title, candi)
+  closest_match = candi[closest_index]
+
+
+  # closest_matches = difflib.get_close_matches(title, candi, n=1, cutoff=0.5)
+  # closest_match = closest_matches[0]
+  # index = candi.index(closest_match) 
+  print(closest_index)
   # return k
 
-  closest_matches = difflib.get_close_matches(title, candi, n=1, cutoff=0.5)
-  closest_match = closest_matches[0]
-  index = candi.index(closest_match) 
 
 
-
-  id = k.get("results", [{}])[index].get("id")
+  id = k.get("results", [{}])[closest_index].get("id")
   print(id)
   for_episodes=f'https://stream-pied-five.vercel.app/anime/zoro/info?id={id}'
   epi=requests.get(for_episodes)
