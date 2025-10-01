@@ -613,6 +613,7 @@ async def main(id:int,dub: str):
 
 
 
+
 @app.get('/watch/{id}/{str}')
 async def main(id:str,str: str):
 
@@ -622,7 +623,13 @@ async def main(id:str,str: str):
  
   # url=f"https://march-api1.vercel.app/meta/anilist/watch/{str}"
 #   url=f"https://dev-amvstrm-api.nyt92.eu.org/api/v2/stream/{id}/{str}"
-  url=f'https://stream-pied-five.vercel.app/anime/zoro/watch/{id}?dub={str}'
+  # url=f'https://stream-pied-five.vercel.app/anime/zoro/watch/{id}?dub={str}'
+  if(str=='false'):
+    str="sub"
+  elif (str=='true'):
+    str='dub'
+  url=f'https://yumaapi.vercel.app/watch?episodeId={id}&type={str}'
+  
   r=requests.get(url,headers=headers)
   k=r.json()
   modified_subtitles = [{"src": item["url"], "label": item["lang"]} for item in k['subtitles']]
@@ -665,3 +672,4 @@ async def main():
 
 
 # https://proxy.ashanime.pro/https://www117.anzeat.pro/streamhls/db98de9dcd8c6a5e3fc38ffe06b647ba/ep.3.1722101690.360.m3u8
+
