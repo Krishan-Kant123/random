@@ -8,7 +8,9 @@ from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 import difflib
 from difflib import SequenceMatcher
-
+from fastapi.responses import StreamingResponse
+from io import BytesIO
+from urllib.parse import urljoin, urlparse
 
 middleware = [
     Middleware(
@@ -655,16 +657,88 @@ async def main(query:str,pgno:int):
 
 # https://api-consumet-org-two-opal.vercel.app/meta/anilist/advanced-search?query=demon+slayer&page=1&perPage=25&type=ANIME
 
-@app.get("/proxy")
-async def main(p: str = Query(..., description="M3U8 master playlist URL")):
+# @app.get("/proxy")
+# async def main(p: str = Query(..., description="M3U8 master playlist URL")):
   
-  proxy_url = "https://m3u8-proxy-dnuse.amvstr.me/"
+#   proxy_url = "https://m3u8-proxy-dnuse.amvstr.me/"
 
-  print(f"{proxy_url}{p}")
+#   print(f"{proxy_url}{p}")
 
 
-  response = requests.get(f"{p}",headers=headers)
-  return response.text
+#   response = requests.get(f"{p}",headers=headers)
+#   return response.text
+
+
+@app.get("/proxy")
+async def proxy_m3u8(url: str):
+    """
+    A FastAPI route to proxy M3U8 stream and add CORS headers.
+    It converts relative URLs in M3U8 playlists and segment files to absolute URLs,
+    except for `.ts` files which will be left unchanged if passed directly.
+    Args:
+    - url: The M3U8 stream URL (usually master.m3u8)
+    """
+    try:
+        # Check if the provided URL ends with `.ts`
+        if url.endswith(".ts"):
+            # If it's a `.ts` URL, don't modify or proxy the content. Just fetch and return it.
+            response = requests.get(url)
+            response.raise_for_status()  # Check for errors
+            return StreamingResponse(
+                BytesIO(response.content), 
+                media_type="video/MP2T",  # Content type for `.ts` files
+                headers={
+                    "Access-Control-Allow-Origin": "*",  # Allow CORS for all origins
+                    "Cache-Control": "no-cache",  # Prevent caching
+                }
+            )
+        
+        # Otherwise, proxy M3U8 playlist and modify the content
+        response = requests.get(url)
+        response.raise_for_status()  # Check for errors
+        
+        # Read the content of the M3U8 file (playlist)
+        m3u8_content = response.text
+
+        # Extract the UUID from the passed URL (the path part before 'master.m3u8')
+        base_url = urlparse(url)._replace(path=urlparse(url).path.rsplit('/', 2)[0]).geturl()
+        uuid = urlparse(url).path.split('/')[-2]  # Extract UUID from URL path
+        
+        # Replace all URLs with the proxy URLs, except for `.ts` files
+        updated_m3u8_content = []
+        for line in m3u8_content.splitlines():
+            
+            if line.startswith("http") or line.startswith("https"):
+                # If it's already an absolute URL, leave it as is (but route through the proxy)
+                updated_line = line
+            elif line.endswith(".m3u8") or line.endswith(".vtt") or line.endswith(".ts"):
+                # Replace relative URLs with proxy URLs for `.m3u8` and `.vtt`
+                updated_line = f"http://127.0.0.1:8000/proxy?url={urljoin(f'{base_url}/{uuid}/', line)}"
+            else:
+                # Just append lines that don't need transformation (e.g., comments)
+                updated_line = line
+
+            updated_m3u8_content.append(updated_line)
+
+        # Convert updated M3U8 content back to a stream
+        stream = BytesIO("\n".join(updated_m3u8_content).encode('utf-8'))
+
+        # Return the streaming response with added CORS headers
+        return StreamingResponse(
+            stream,
+            media_type="application/vnd.apple.mpegurl",  # Content type for M3U8
+            headers={
+                "Access-Control-Allow-Origin": "*",  # Allow CORS for all origins
+                "Access-Control-Allow-Headers": "Content-Type",
+                "Access-Control-Allow-Methods": "GET, POST",  # Allowed methods
+                "Cache-Control": "no-cache",  # Prevent caching
+            }
+        )
+
+    except requests.exceptions.RequestException as e:
+        # Handle potential errors (e.g., invalid URL, connection issues)
+        return {"error": f"Failed to fetch the stream: {str(e)}"}
+
 
 @app.get('*')
 async def main():
@@ -672,4 +746,5 @@ async def main():
 
 
 # https://proxy.ashanime.pro/https://www117.anzeat.pro/streamhls/db98de9dcd8c6a5e3fc38ffe06b647ba/ep.3.1722101690.360.m3u8
+
 
