@@ -713,7 +713,7 @@ async def proxy_m3u8(url: str):
                 updated_line = line
             elif line.endswith(".m3u8") or line.endswith(".vtt") or line.endswith(".ts"):
                 # Replace relative URLs with proxy URLs for `.m3u8` and `.vtt`
-                updated_line = f"http://127.0.0.1:8000/proxy?url={urljoin(f'{base_url}/{uuid}/', line)}"
+                updated_line = f"https://random-plum-tau.vercel.app/proxy?url={urljoin(f'{base_url}/{uuid}/', line)}"
             else:
                 # Just append lines that don't need transformation (e.g., comments)
                 updated_line = line
@@ -746,5 +746,6 @@ async def main():
 
 
 # https://proxy.ashanime.pro/https://www117.anzeat.pro/streamhls/db98de9dcd8c6a5e3fc38ffe06b647ba/ep.3.1722101690.360.m3u8
+
 
 
