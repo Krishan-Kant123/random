@@ -8,9 +8,10 @@ from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 import difflib
 from difflib import SequenceMatcher
-from fastapi.responses import StreamingResponse
+# from fastapi.responses import StreamingResponse
 from io import BytesIO
 from urllib.parse import urljoin, urlparse
+import re
 
 middleware = [
     Middleware(
@@ -42,26 +43,49 @@ headers = {
 
 url = 'https://graphql.anilist.co'
 
+
+
+
+def normalize(text):
+    text = text.lower()
+    text = re.sub(r"\(.*?\)", "", text)
+    text = re.sub(r"[^a-z0-9 ]", "", text)
+    return text.strip()
+
+
 def similarity(a, b):
     return SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
 def best_match(query, choices):
-    query_lower = query.lower()
-    
-    # Prioritize exact word matches first
-    exact_matches = [i for i, title in enumerate(choices) if query_lower in title.lower()]
-    
-    if exact_matches:
-        return exact_matches[0]  # Return first exact match
-    
-    # If no exact matches, use similarity score
-    return max(range(len(choices)), key=lambda i: similarity(query, choices[i]))
+    nq = normalize(query)
+    normalized_choices = [normalize(c) for c in choices]
+
+    # 1️ PERFECT match (must win)
+    for i, nc in enumerate(normalized_choices):
+        if nc == nq:
+            return i
+
+    # 2️ Query is a full phrase inside title
+    contains = [
+        i for i, nc in enumerate(normalized_choices)
+        if f" {nq} " in f" {nc} "
+    ]
+    if contains:
+        # pick the SHORTEST title (base anime beats arcs)
+        return min(contains, key=lambda i: len(normalized_choices[i]))
+
+    # 3️ Fallback to similarity
+    return max(
+        range(len(choices)),
+        key=lambda i: similarity(nq, normalized_choices[i])
+    )
+
 
 def ep(title:str,dub:str):
   print(title)
   # u=f'https://dev-amvstrm-api.nyt92.eu.org/api/v1/episode/{title}'
   
-  u=f'https://stream-pied-five.vercel.app/anime/zoro/{title}'
+  u=f'https://stream-pied-five.vercel.app/anime/hianime/{title}'
   r=requests.get(u)
  
   k=r.json()
@@ -86,7 +110,7 @@ def ep(title:str,dub:str):
 
   id = k.get("results", [{}])[closest_index].get("id")
   print(id)
-  for_episodes=f'https://stream-pied-five.vercel.app/anime/zoro/info?id={id}'
+  for_episodes=f'https://stream-pied-five.vercel.app/anime/hianime/info?id={id}'
   epi=requests.get(for_episodes)
 #   print(epi)
   epi=epi.json()
@@ -630,7 +654,7 @@ async def main(id:str,str: str):
     str="sub"
   elif (str=='true'):
     str='dub'
-  url=f'https://yumaapi.vercel.app/watch?episodeId={id}&type={str}'
+  url=f'https://yuma-anime-api-rho.vercel.app/watch?episodeId={id}&type={str}'
   
   r=requests.get(url,headers=headers)
   k=r.json()
@@ -713,7 +737,7 @@ async def proxy_m3u8(url: str):
                 updated_line = line
             elif line.endswith(".m3u8") or line.endswith(".vtt") or line.endswith(".ts"):
                 # Replace relative URLs with proxy URLs for `.m3u8` and `.vtt`
-                updated_line = f"https://random-plum-tau.vercel.app/proxy?url={urljoin(f'{base_url}/{uuid}/', line)}"
+                updated_line = f"http://127.0.0.1:8000/proxy?url={urljoin(f'{base_url}/{uuid}/', line)}"
             else:
                 # Just append lines that don't need transformation (e.g., comments)
                 updated_line = line
@@ -746,6 +770,4 @@ async def main():
 
 
 # https://proxy.ashanime.pro/https://www117.anzeat.pro/streamhls/db98de9dcd8c6a5e3fc38ffe06b647ba/ep.3.1722101690.360.m3u8
-
-
 
