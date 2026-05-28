@@ -360,11 +360,11 @@ query ($id: Int) { # Define which variables will be used in the query (id)
   #   name=provider["idGogoDub"]
   
   nam= e['data']['Media']['title']['english']
-#   s=(ep(nam,dub))
-# #   print(s)
-#   e['data']['Media']["totalepisodes"]=s
- e['data']['Media']["totalepisodes"]=[]
-#   print(e['data']['Media'])
+  #   s=(ep(nam,dub))
+  # #   print(s)
+  #   e['data']['Media']["totalepisodes"]=s
+  e['data']['Media']["totalepisodes"]=[]
+  #   print(e['data']['Media'])
   
   return e
 
